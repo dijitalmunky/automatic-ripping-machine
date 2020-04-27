@@ -34,6 +34,9 @@ def handbrake_mainfeature(srcpath, basepath, logfile, job):
 
     track = job.tracks.filter_by(main_feature=True).first()
 
+    if not track:
+      track = job.tracks.order_by(Track.length.desc()).first()
+
     logging.info("Ripping title Mainfeature to " + shlex.quote(filepathname))
 
     track.filename = track.orig_filename = filename
@@ -46,10 +49,11 @@ def handbrake_mainfeature(srcpath, basepath, logfile, job):
         hb_args = job.config.HB_ARGS_BD
         hb_preset = job.config.HB_PRESET_BD
 
-    cmd = 'nice {0} -i {1} -o {2} --main-feature --preset "{3}" {4} >> {5} 2>&1'.format(
+    cmd = 'nice {0} -i {1} -o {2} -t {3} --preset "{4}" {5} >> {6} 2>&1'.format(
         job.config.HANDBRAKE_CLI,
         shlex.quote(srcpath),
         shlex.quote(filepathname),
+        str(track.track_number),
         hb_preset,
         hb_args,
         logfile
@@ -219,7 +223,7 @@ def get_track_info(srcpath, job):
     srcpath = Path to disc\n
     job = Job instance\n
     """
-    
+
     logging.info("Using HandBrake to get information on all the tracks on the disc.  This will take a few minutes...")
 
     cmd = '{0} -i {1} -t 0 --scan'.format(
